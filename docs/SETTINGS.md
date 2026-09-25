@@ -246,5 +246,8 @@ These are not configurable (they are built in with sensible values):
 
 ## Credits
 
-The plugin is inspired by
+This plugin was inspired by
+[brunopiras/naviradiomanager](https://github.com/brunopiras/naviradiomanager)
+(Navidrome Radio Manager), which in turn credits
 [WB2024/Add-Navidrome-Radios](https://github.com/WB2024/Add-Navidrome-Radios).
+See the [Credits section in the README](../README.md#credits) for the full story.
