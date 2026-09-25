@@ -57,13 +57,14 @@ homepage is what makes a logo appear. The plugin therefore always fills
 
 The settings UI is grouped into sections:
 
-- **Synchronisatie** – `sync_cron`, `dry_run`.
-- **Naamgeving** – `name_template`.
+- **Synchronization** – `sync_cron`, `dry_run`, `sync_now` (one-time run after
+  saving settings; it is consumed, so it only runs once per off→on toggle).
+- **Naming** – `name_template`.
 - **Filters** – `hide_broken`; for each of country codes, tags, language codes
   and codecs an include/exclude toggle plus a comma-separated list (empty = no
   filter); `min_bitrate` and `min_votes`.
-- **Vereisten** – `require_countrycode`, `require_homepage`, `require_geo`.
-- **Gedrag** – `prune_missing`.
+- **Requirements** – `require_countrycode`, `require_homepage`, `require_geo`.
+- **Behaviour** – `prune_missing`.
 
 Rendered station names are capped at 2048 characters.
 
