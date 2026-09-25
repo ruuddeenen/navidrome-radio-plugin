@@ -11,8 +11,9 @@ On a configurable cron schedule the plugin:
 4. creates / updates / removes the matching stations in Navidrome through the
    Subsonic API.
 
-> **Status:** work in progress. Step 1 implements the read + filter + template
-> dry-run probe. Creating/updating stations is added in a later step.
+> **Status:** work in progress. Fetch, filter, template, plan/index/apply
+> reconciliation (create/update/delete) and the dry-run work. Throttling and the
+> full initial import are being validated.
 
 ## Requirements
 

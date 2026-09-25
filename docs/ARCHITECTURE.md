@@ -9,8 +9,8 @@ Navidrome (WASM sandbox)
           radiobrowser  radio-browser client (mirrors, retries, paging) + Station
           template     {field} / {field?:default} name rendering
           filter       country/tag/language/codec/bitrate/broken filters
-          syncer       plan / index / apply / finalize (added in step 3)
-          subsonic     Subsonic radio API wrapper (added in step 3)
+          syncer       plan / index / apply state machine (sharded, resumable)
+          subsonic     Subsonic radio API wrapper
 ```
 
 ## Host services used

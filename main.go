@@ -5,16 +5,11 @@
 // A scheduled task periodically fetches internet radio stations from
 // radio-browser.info, applies the configured filters and creates/updates/removes
 // the matching internet radio stations in Navidrome via the Subsonic API.
-//
-// The current implementation contains the dry-run probe (step 1): it fetches a
-// few pages, applies the filters and logs the resulting names without writing to
-// Navidrome.
 package main
 
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 
 	"github.com/navidrome/navidrome/plugins/pdk/go/host"
 	"github.com/navidrome/navidrome/plugins/pdk/go/lifecycle"
@@ -22,10 +17,10 @@ import (
 	"github.com/navidrome/navidrome/plugins/pdk/go/scheduler"
 	"github.com/navidrome/navidrome/plugins/pdk/go/taskworker"
 
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/filter"
 	"github.com/ruuddeenen/navidrome-radio-plugin/internal/radiobrowser"
 	"github.com/ruuddeenen/navidrome-radio-plugin/internal/settings"
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/template"
+	"github.com/ruuddeenen/navidrome-radio-plugin/internal/subsonic"
+	"github.com/ruuddeenen/navidrome-radio-plugin/internal/syncer"
 )
 
 const (
@@ -33,11 +28,11 @@ const (
 	scheduleID  = "navidrome-radio-sync"
 	payloadSync = "sync"
 
-	kindProbe = "probe"
+	kindStart = "start"
+	kindPlan  = "plan"
+	kindIndex = "index"
+	kindApply = "apply"
 )
-
-// probePages bounds the dry-run probe so a first test stays fast.
-const probePages = 3
 
 type plugin struct{}
 
@@ -52,12 +47,16 @@ func init() {
 func (p *plugin) OnInit() error {
 	s := loadSettings()
 
-	_ = host.TaskCreateQueue(queueName, host.QueueConfig{
+	config := host.QueueConfig{
 		Concurrency: 1,
 		MaxRetries:  2,
 		BackoffMs:   5000,
 		RetentionMs: 3600000,
-	})
+	}
+	if s.TaskDelayMs > 0 {
+		config.DelayMs = int64(s.TaskDelayMs)
+	}
+	_ = host.TaskCreateQueue(queueName, config)
 
 	if _, err := host.SchedulerScheduleRecurring(s.SyncCron, payloadSync, scheduleID); err != nil {
 		pdk.Log(pdk.LogError, "failed to schedule radio sync: "+err.Error())
@@ -76,19 +75,14 @@ func (p *plugin) OnCallback(req scheduler.SchedulerCallbackRequest) error {
 	if req.Payload != payloadSync {
 		return nil
 	}
-	payload, err := json.Marshal(taskPayload{Kind: kindProbe})
-	if err != nil {
-		return err
-	}
-	_, err = host.TaskEnqueue(queueName, payload)
-	return err
+	return enqueue(kindStart, 0)
 }
 
 // ---------- task worker ----------
 
 type taskPayload struct {
-	Kind string `json:"kind"`
-	Page int    `json:"page,omitempty"`
+	Kind   string `json:"kind"`
+	Bucket int    `json:"bucket,omitempty"`
 }
 
 func (p *plugin) OnTaskExecute(req taskworker.TaskExecuteRequest) (string, error) {
@@ -96,68 +90,90 @@ func (p *plugin) OnTaskExecute(req taskworker.TaskExecuteRequest) (string, error
 	if err := json.Unmarshal(req.Payload, &payload); err != nil {
 		return "", err
 	}
+
+	runner, err := buildRunner(loadSettings())
+	if err != nil {
+		return "", err
+	}
+
+	var action syncer.Action
 	switch payload.Kind {
-	case kindProbe:
-		return runProbe()
+	case kindStart:
+		action, err = runner.Start()
+	case kindPlan:
+		action, err = runner.Plan()
+	case kindIndex:
+		action, err = runner.Index()
+	case kindApply:
+		action, err = runner.Apply(payload.Bucket)
 	default:
 		return "unknown task kind: " + payload.Kind, nil
 	}
+	if err != nil {
+		return "", err
+	}
+	return followUp(runner, action)
 }
 
-// runProbe fetches a few pages, applies the filters and logs the resulting
-// names. It does not touch Navidrome.
-func runProbe() (string, error) {
-	s := loadSettings()
-	client := &radiobrowser.Client{
-		Doer:       hostDoer{},
-		BaseURL:    s.BaseURL,
-		PageSize:   s.PageSize,
-		HideBroken: s.HideBroken,
-		Order:      s.Order,
-		Reverse:    s.Reverse,
+func followUp(runner *syncer.Runner, action syncer.Action) (string, error) {
+	if action.Kind == "" {
+		summary := runner.Summary()
+		pdk.Log(pdk.LogInfo, "radio sync finished: "+summary)
+		return summary, nil
 	}
+	if err := enqueue(action.Kind, action.Bucket); err != nil {
+		return "", err
+	}
+	return action.Kind, nil
+}
 
-	total := 0
-	kept := 0
-	reasons := map[string]int{}
-	var samples []string
+func enqueue(kind string, bucket int) error {
+	data, err := json.Marshal(taskPayload{Kind: kind, Bucket: bucket})
+	if err != nil {
+		return err
+	}
+	_, err = host.TaskEnqueue(queueName, data)
+	return err
+}
 
-	for page := 0; page < probePages; page++ {
-		stations, err := client.Page(page * s.PageSize)
-		if err != nil {
-			return "", err
-		}
-		total += len(stations)
-		for _, st := range stations {
-			decision := filter.Apply(s, st)
-			if !decision.Keep {
-				reasons[decision.Reason]++
-				continue
-			}
-			kept++
-			if len(samples) < 10 {
-				samples = append(samples, template.Render(s.NameTemplate, st.Field))
-			}
-		}
-		if len(stations) < s.PageSize {
-			break
-		}
+func buildRunner(s settings.Settings) (*syncer.Runner, error) {
+	admin, err := resolveAdmin(s)
+	if err != nil {
+		return nil, err
 	}
+	return &syncer.Runner{
+		S:     s,
+		Store: kvStore{},
+		Fetch: &radiobrowser.Client{
+			Doer:       hostDoer{},
+			BaseURL:    s.BaseURL,
+			PageSize:   s.PageSize,
+			HideBroken: s.HideBroken,
+			Order:      s.Order,
+			Reverse:    s.Reverse,
+		},
+		API: &subsonic.Client{
+			User: admin,
+			Call: func(uri string) (string, error) { return host.SubsonicAPICall(uri) },
+		},
+		Log: func(format string, args ...any) {
+			pdk.Log(pdk.LogInfo, fmt.Sprintf(format, args...))
+		},
+	}, nil
+}
 
-	summary := fmt.Sprintf("dry-run probe: fetched=%d kept=%d", total, kept)
-	pdk.Log(pdk.LogInfo, summary)
-	keys := make([]string, 0, len(reasons))
-	for k := range reasons {
-		keys = append(keys, k)
+func resolveAdmin(s settings.Settings) (string, error) {
+	if s.AdminUser != "" {
+		return s.AdminUser, nil
 	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		pdk.Log(pdk.LogInfo, fmt.Sprintf("  filtered %s=%d", k, reasons[k]))
+	admins, err := host.UsersGetAdmins()
+	if err != nil {
+		return "", err
 	}
-	for _, name := range samples {
-		pdk.Log(pdk.LogInfo, "  sample: "+name)
+	if len(admins) == 0 {
+		return "", fmt.Errorf("no admin user available for subsonic calls")
 	}
-	return summary, nil
+	return admins[0].UserName, nil
 }
 
 // ---------- adapters ----------
@@ -175,6 +191,27 @@ func (hostDoer) Do(method, url string, headers map[string]string, timeoutMs int3
 		return 0, nil, err
 	}
 	return int(resp.StatusCode), resp.Body, nil
+}
+
+type kvStore struct{}
+
+func (kvStore) Get(key string) (string, bool) {
+	value, exists, err := host.KVStoreGet(key)
+	if err != nil || !exists {
+		return "", false
+	}
+	return string(value), true
+}
+
+func (kvStore) Set(key, value string) { _ = host.KVStoreSet(key, []byte(value)) }
+
+func (kvStore) Delete(key string) { _ = host.KVStoreDelete(key) }
+
+func (kvStore) List(prefix string) ([]string, error) { return host.KVStoreList(prefix) }
+
+func (kvStore) RemovePrefix(prefix string) error {
+	_, err := host.KVStoreDeleteByPrefix(prefix)
+	return err
 }
 
 func loadSettings() settings.Settings {
