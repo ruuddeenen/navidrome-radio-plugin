@@ -15,8 +15,6 @@ Everything runs in the background via Navidrome's task queue, so a full import
 of ~55k stations never blocks the server.
 
 > **Acknowledgements:** inspired by
-> [brunopiras/naviradiomanager](https://github.com/brunopiras/naviradiomanager)
-> (Navidrome Radio Manager), which itself builds on
 > [WB2024/Add-Navidrome-Radios](https://github.com/WB2024/Add-Navidrome-Radios).
 > See [Credits](#credits).
 
@@ -153,26 +151,12 @@ fallback to the origin of the stream URL when the homepage is missing).
 
 ## Credits
 
-This plugin was inspired by two earlier projects:
-
-- **[brunopiras/naviradiomanager](https://github.com/brunopiras/naviradiomanager)**
-  (Navidrome Radio Manager) — a simple, fast web interface that manages
-  radio-browser.info stations through the **Subsonic API**. This plugin follows
-  that API-based approach (no direct database writes).
-- **[WB2024/Add-Navidrome-Radios](https://github.com/WB2024/Add-Navidrome-Radios)**
-  by [@WB2024](https://github.com/WB2024) — the original tool that loads the
-  radio-browser.info database into Navidrome by writing directly to the database
-  via the CLI. Navidrome Radio Manager credits @WB2024 as its inspiration, and so
-  does this project.
-
-As the Navidrome Radio Manager author put it:
-
-> This idea came to me while using @WB2024's tool. While his tool interacts
-> directly with the database via CLI, Navidrome Radio Manager uses the Subsonic
-> API for a simple, fast, and intuitive web interface!
-
-This plugin tries to take it one step further still: keep it even simpler — no
-web UI, just a background sync with a schedule, a name template and filters.
+This project is inspired by
+**[WB2024/Add-Navidrome-Radios](https://github.com/WB2024/Add-Navidrome-Radios)**
+by [@WB2024](https://github.com/WB2024), which loads the radio-browser.info
+database into Navidrome by writing directly to the database via the CLI. This
+plugin takes that idea further by using the supported **Subsonic API** (no direct
+database writes), with a configurable schedule, a name template and filters.
 
 ## License
 
