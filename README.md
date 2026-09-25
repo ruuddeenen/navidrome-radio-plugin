@@ -57,8 +57,8 @@ homepage is what makes a logo appear. The plugin therefore always fills
 
 The settings UI is grouped into sections:
 
-- **Synchronization** – `sync_cron`, `dry_run`, `sync_now` (one-time run after
-  saving settings; it is consumed, so it only runs once per off→on toggle).
+- **Synchronization** – `sync_cron`, `dry_run`, `run_on_save` (when enabled,
+  runs a one-time sync whenever the settings are saved; default off).
 - **Naming** – `name_template`.
 - **Filters** – `hide_broken`; for each of country codes, tags, language codes
   and codecs an include/exclude toggle plus a comma-separated list (empty = no

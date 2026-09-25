@@ -68,16 +68,14 @@ SYNC = [
         },
     ),
     (
-        "sync_now",
+        "run_on_save",
         {
             "type": "boolean",
-            "title": "Sync now (one-time)",
+            "title": "Sync after saving settings",
             "description": (
-                "Runs a one-time sync after the plugin loads (i.e. after saving "
-                "settings). The plugin records that it ran, so it does not run "
-                "again on the next load; toggle off and on again to trigger "
-                "another run. Note: the switch cannot reset itself because plugin "
-                "settings are read-only from within the plugin."
+                "When enabled, the plugin runs a one-time sync whenever the settings "
+                "are saved (the plugin reloads and detects the config change). Leave "
+                "it on to sync after every change, or turn it off. Default: off."
             ),
             "default": False,
         },
@@ -208,7 +206,7 @@ def build() -> dict:
     ui_schema = {
         "type": "VerticalLayout",
         "elements": [
-            group("Synchronization", [control("sync_cron"), control("dry_run"), control("sync_now")]),
+            group("Synchronization", [control("sync_cron"), control("dry_run"), control("run_on_save")]),
             group("Naming", [control("name_template", {"multi": True})]),
             group(
                 "Filters",

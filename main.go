@@ -10,6 +10,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/navidrome/navidrome/plugins/pdk/go/host"
 	"github.com/navidrome/navidrome/plugins/pdk/go/lifecycle"
@@ -63,22 +66,23 @@ func (p *plugin) OnInit() error {
 		return err
 	}
 
-	// Optional one-time sync triggered from the settings ("Sync now"). The plugin
-	// cannot write its own config, so the consumed state is tracked in the
-	// KVStore: it runs once per off->on transition, not on every load.
+	// "Sync after saving settings": when enabled, run a one-time sync whenever
+	// the config changes. Saving settings unloads and reloads the plugin (which
+	// calls OnInit), so compare a fingerprint of the current config with the last
+	// seen one. This keeps the toggle stateless in the plugin (config is
+	// read-only) and does not run on restarts without a config change.
 	store := kvStore{}
-	if s.SyncNow {
-		if last, _ := store.Get("trigger:sync_now"); last != "1" {
+	fingerprint := configFingerprint()
+	if s.RunOnSave {
+		if last, _ := store.Get("trigger:config_fingerprint"); last != fingerprint {
 			if _, err := host.SchedulerScheduleOneTime(1, payloadSync, scheduleID+"-manual"); err != nil {
 				pdk.Log(pdk.LogWarn, "failed to schedule manual sync: "+err.Error())
 			} else {
-				pdk.Log(pdk.LogInfo, "one-time sync triggered from settings")
+				pdk.Log(pdk.LogInfo, "one-time sync triggered by settings change")
 			}
-			store.Set("trigger:sync_now", "1")
 		}
-	} else {
-		store.Set("trigger:sync_now", "0")
 	}
+	store.Set("trigger:config_fingerprint", fingerprint)
 
 	pdk.Log(pdk.LogInfo, "automatic-radio-sync ready; cron="+s.SyncCron)
 	return nil
@@ -233,6 +237,27 @@ func loadSettings() settings.Settings {
 	return settings.Load(func(key string) (string, bool) {
 		return host.ConfigGet(key)
 	})
+}
+
+// configFingerprint returns a stable hash of the current plugin configuration.
+func configFingerprint() string {
+	keys := host.ConfigKeys("")
+	sort.Strings(keys)
+	var builder strings.Builder
+	for _, key := range keys {
+		value, _ := host.ConfigGet(key)
+		builder.WriteString(key)
+		builder.WriteByte('=')
+		builder.WriteString(value)
+		builder.WriteByte('\n')
+	}
+	data := builder.String()
+	var hash uint32 = 2166136261
+	for i := 0; i < len(data); i++ {
+		hash ^= uint32(data[i])
+		hash *= 16777619
+	}
+	return strconv.FormatUint(uint64(hash), 16)
 }
 
 func main() {}

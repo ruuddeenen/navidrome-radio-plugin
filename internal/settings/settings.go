@@ -59,7 +59,7 @@ type Settings struct {
 	BootstrapOpsPerRun int
 	PruneMissing       bool
 	DryRun             bool
-	SyncNow            bool
+	RunOnSave          bool
 	AdminUser          string
 	HomepageFallback   bool
 }
@@ -105,7 +105,7 @@ func Load(get Getter) Settings {
 
 	s.PruneMissing = boolean(get, "prune_missing", s.PruneMissing)
 	s.DryRun = boolean(get, "dry_run", false)
-	s.SyncNow = boolean(get, "sync_now", false)
+	s.RunOnSave = boolean(get, "run_on_save", false)
 
 	return s
 }
