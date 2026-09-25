@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate manifest.json for the Navidrome Radio Plugin.
+"""Generate manifest.json for the Navidrome Radio Sync Plugin.
 
 The settings are grouped into sections (JSONForms `Group`) and every field has a
 `description`, which Navidrome shows as a hint under the input.
@@ -219,14 +219,14 @@ def build() -> dict:
     }
 
     return {
-        "name": "Navidrome Radio Plugin",
+        "name": "Navidrome Radio Sync Plugin",
         "author": "Ruud Deenen",
         "version": "0.2.0",
         "description": (
             "Periodically syncs internet radio stations from radio-browser.info into "
             "Navidrome, with configurable cron, name template and filters."
         ),
-        "website": "https://github.com/ruuddeenen/navidrome-radio-plugin",
+        "website": "https://github.com/ruuddeenen/navidrome-radio-sync-plugin",
         "config": {
             "schema": {"type": "object", "properties": properties, "required": []},
             "uiSchema": ui_schema,

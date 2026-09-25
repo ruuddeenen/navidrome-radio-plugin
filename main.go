@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// Entry point for the Navidrome Radio Plugin.
+// Entry point for the Navidrome Radio Sync Plugin.
 //
 // A scheduled task periodically fetches internet radio stations from
 // radio-browser.info, applies the configured filters and creates/updates/removes
@@ -17,10 +17,10 @@ import (
 	"github.com/navidrome/navidrome/plugins/pdk/go/scheduler"
 	"github.com/navidrome/navidrome/plugins/pdk/go/taskworker"
 
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/radiobrowser"
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/settings"
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/subsonic"
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/syncer"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/radiobrowser"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/settings"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/subsonic"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/syncer"
 )
 
 const (
@@ -65,7 +65,7 @@ func (p *plugin) OnInit() error {
 	if _, err := host.SchedulerScheduleOneTime(20, payloadSync, scheduleID+"-initial"); err != nil {
 		pdk.Log(pdk.LogWarn, "failed to schedule initial radio sync: "+err.Error())
 	}
-	pdk.Log(pdk.LogInfo, "navidrome-radio-plugin ready; cron="+s.SyncCron)
+	pdk.Log(pdk.LogInfo, "navidrome-radio-sync-plugin ready; cron="+s.SyncCron)
 	return nil
 }
 

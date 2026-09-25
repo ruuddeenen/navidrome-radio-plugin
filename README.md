@@ -1,4 +1,4 @@
-# Navidrome Radio Plugin
+# Navidrome Radio Sync Plugin
 
 A [Navidrome](https://www.navidrome.org/) plugin that keeps Navidrome's internet
 radio stations in sync with [radio-browser.info](https://www.radio-browser.info/).
@@ -75,7 +75,7 @@ clones Navidrome at a pinned version and points `go.mod`'s `replace` at it.
 ```bash
 make deps              # clone Navidrome into .build/navidrome
 make test              # unit tests
-make build-go          # standard Go wasip1 build -> navidrome-radio-plugin.ndp
+make build-go          # standard Go wasip1 build -> navidrome-radio-sync-plugin.ndp
 # or, inside a container (hosts without Go):
 make build-go-docker
 make test-go-docker
@@ -83,12 +83,12 @@ make test-go-docker
 
 ## Install
 
-1. Copy `navidrome-radio-plugin.ndp` to `<DataFolder>/plugins/`.
+1. Copy `navidrome-radio-sync-plugin.ndp` to `<DataFolder>/plugins/`.
 2. Ensure `Plugins.Enabled = true` in `navidrome.toml`.
 3. Enable the plugin and grant access:
    ```bash
-   navidrome plugin enable navidrome-radio-plugin
-   navidrome plugin edit navidrome-radio-plugin \
+   navidrome plugin enable navidrome-radio-sync-plugin
+   navidrome plugin edit navidrome-radio-sync-plugin \
      --all-users \
      --config '{"sync_cron":"30 1 * * *"}'
    ```

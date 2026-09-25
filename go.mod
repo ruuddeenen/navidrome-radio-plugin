@@ -1,4 +1,4 @@
-module github.com/ruuddeenen/navidrome-radio-plugin
+module github.com/ruuddeenen/navidrome-radio-sync-plugin
 
 go 1.25
 

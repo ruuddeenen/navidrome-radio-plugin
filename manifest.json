@@ -1,9 +1,9 @@
 {
-  "name": "Navidrome Radio Plugin",
+  "name": "Navidrome Radio Sync Plugin",
   "author": "Ruud Deenen",
   "version": "0.2.0",
   "description": "Periodically syncs internet radio stations from radio-browser.info into Navidrome, with configurable cron, name template and filters.",
-  "website": "https://github.com/ruuddeenen/navidrome-radio-plugin",
+  "website": "https://github.com/ruuddeenen/navidrome-radio-sync-plugin",
   "config": {
     "schema": {
       "type": "object",

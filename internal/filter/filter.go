@@ -7,8 +7,8 @@ package filter
 import (
 	"strings"
 
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/radiobrowser"
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/settings"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/radiobrowser"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/settings"
 )
 
 // Decision is the filter outcome.

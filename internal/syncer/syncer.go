@@ -19,11 +19,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/filter"
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/radiobrowser"
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/settings"
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/subsonic"
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/template"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/filter"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/radiobrowser"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/settings"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/subsonic"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/template"
 )
 
 // Buckets is the number of shards the desired and existing sets are split into.

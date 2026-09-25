@@ -3,8 +3,8 @@ package filter
 import (
 	"testing"
 
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/radiobrowser"
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/settings"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/radiobrowser"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/settings"
 )
 
 func st(json string) radiobrowser.Station {

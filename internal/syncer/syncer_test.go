@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/radiobrowser"
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/settings"
-	"github.com/ruuddeenen/navidrome-radio-plugin/internal/subsonic"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/radiobrowser"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/settings"
+	"github.com/ruuddeenen/navidrome-radio-sync-plugin/internal/subsonic"
 )
 
 type memStore struct{ m map[string]string }
