@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Ruud Deenen
+#
+# This plugin uses the Navidrome plugin PDK, which is part of Navidrome and is
+# licensed under the GNU General Public License v3.0 or later. This plugin is
+# therefore distributed under the same license.

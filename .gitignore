@@ -1,0 +1,10 @@
+# Build artifacts
+.build/
+*.wasm
+*.ndp
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

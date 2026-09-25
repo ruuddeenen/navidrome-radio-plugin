@@ -1,0 +1,355 @@
+{
+  "name": "Navidrome Radio Plugin",
+  "author": "Ruud Deenen",
+  "version": "0.1.0",
+  "description": "Periodically syncs internet radio stations from radio-browser.info into Navidrome, with configurable cron, name template and filters.",
+  "website": "https://github.com/ruuddeenen/navidrome-radio-plugin",
+  "config": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "sync_cron": {
+          "type": "string",
+          "default": "30 1 * * *"
+        },
+        "name_template": {
+          "type": "string",
+          "default": "[{countrycode?:OTHER}] [{tags}] {name}",
+          "description": "Placeholders: {name} {url} {url_resolved} {homepage} {favicon} {tags} {tag} {countrycode} {country} {countrysubdivisioncode} {countrysubdivision} {language} {languages} {languagecodes} {codec} {geoinfo}, plus any raw radio-browser field. Use {field?:default} for a fallback. Empty bracket groups such as [] are removed."
+        },
+        "max_name_length": {
+          "type": "integer",
+          "default": 0
+        },
+        "radiobrowser_base": {
+          "type": "string",
+          "description": "When empty, the public mirrors are used with failover."
+        },
+        "page_size": {
+          "type": "integer",
+          "default": 2000
+        },
+        "order": {
+          "type": "string"
+        },
+        "reverse": {
+          "type": "boolean",
+          "default": false
+        },
+        "hide_broken": {
+          "type": "boolean",
+          "default": true
+        },
+        "require_countrycode": {
+          "type": "boolean",
+          "default": false
+        },
+        "include_countrycodes": {
+          "type": "string"
+        },
+        "exclude_countrycodes": {
+          "type": "string"
+        },
+        "include_countries": {
+          "type": "string"
+        },
+        "exclude_countries": {
+          "type": "string"
+        },
+        "include_tags": {
+          "type": "string"
+        },
+        "exclude_tags": {
+          "type": "string"
+        },
+        "include_languages": {
+          "type": "string"
+        },
+        "include_languagecodes": {
+          "type": "string"
+        },
+        "exclude_languagecodes": {
+          "type": "string"
+        },
+        "include_codecs": {
+          "type": "string"
+        },
+        "exclude_codecs": {
+          "type": "string"
+        },
+        "min_bitrate": {
+          "type": "integer",
+          "default": 0
+        },
+        "max_bitrate": {
+          "type": "integer",
+          "default": 0
+        },
+        "exclude_hls": {
+          "type": "boolean",
+          "default": false
+        },
+        "ssl_only": {
+          "type": "boolean",
+          "default": false
+        },
+        "require_homepage": {
+          "type": "boolean",
+          "default": false
+        },
+        "require_geo": {
+          "type": "boolean",
+          "default": false
+        },
+        "min_votes": {
+          "type": "integer",
+          "default": 0
+        },
+        "max_stations": {
+          "type": "integer",
+          "default": 0
+        },
+        "batch_size": {
+          "type": "integer",
+          "default": 200
+        },
+        "task_delay_ms": {
+          "type": "integer",
+          "default": 0
+        },
+        "bootstrap_ops_per_run": {
+          "type": "integer",
+          "default": 0
+        },
+        "prune_missing": {
+          "type": "boolean",
+          "default": true
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": false
+        },
+        "admin_user": {
+          "type": "string"
+        },
+        "homepage_fallback": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "required": []
+    },
+    "uiSchema": {
+      "type": "VerticalLayout",
+      "elements": [
+        {
+          "type": "Control",
+          "scope": "#/properties/sync_cron"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/name_template",
+          "options": {
+            "multi": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/max_name_length"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/radiobrowser_base"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/page_size"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/order"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/reverse"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/hide_broken"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/require_countrycode"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/include_countrycodes",
+          "options": {
+            "multi": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/exclude_countrycodes",
+          "options": {
+            "multi": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/include_countries",
+          "options": {
+            "multi": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/exclude_countries",
+          "options": {
+            "multi": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/include_tags",
+          "options": {
+            "multi": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/exclude_tags",
+          "options": {
+            "multi": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/include_languages",
+          "options": {
+            "multi": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/include_languagecodes",
+          "options": {
+            "multi": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/exclude_languagecodes",
+          "options": {
+            "multi": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/include_codecs",
+          "options": {
+            "multi": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/exclude_codecs",
+          "options": {
+            "multi": true
+          }
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/min_bitrate"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/max_bitrate"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/exclude_hls"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/ssl_only"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/require_homepage"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/require_geo"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/min_votes"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/max_stations"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/batch_size"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/task_delay_ms"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/bootstrap_ops_per_run"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/prune_missing"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/dry_run"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/admin_user"
+        },
+        {
+          "type": "Control",
+          "scope": "#/properties/homepage_fallback"
+        }
+      ]
+    }
+  },
+  "permissions": {
+    "http": {
+      "reason": "Fetch stations from radio-browser.info.",
+      "requiredHosts": [
+        "de1.api.radio-browser.info",
+        "de2.api.radio-browser.info",
+        "nl1.api.radio-browser.info",
+        "at1.api.radio-browser.info",
+        "fr1.api.radio-browser.info",
+        "all.api.radio-browser.info",
+        "*.radio-browser.info"
+      ]
+    },
+    "kvstore": {
+      "reason": "Persist sync progress and the station ID mapping.",
+      "maxSize": "64MB"
+    },
+    "scheduler": {
+      "reason": "Run the periodic radio sync."
+    },
+    "taskqueue": {
+      "reason": "Process stations in the background with retries.",
+      "maxConcurrency": 2
+    },
+    "subsonicapi": {
+      "reason": "Create, update and delete internet radio stations."
+    },
+    "users": {
+      "reason": "Authorize the internal Subsonic API calls."
+    }
+  }
+}
