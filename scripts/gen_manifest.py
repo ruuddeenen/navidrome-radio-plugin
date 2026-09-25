@@ -102,15 +102,6 @@ NAMING = [
 ]
 
 FILTERS = [
-    (
-        "hide_broken",
-        {
-            "type": "boolean",
-            "title": "Hide broken stations",
-            "description": "Only include stations that are currently reachable (Radio-Browser lastcheckok).",
-            "default": True,
-        },
-    ),
     ("countrycodes_mode", mode("Country codes", "Filter by ISO country code.")),
     ("countrycodes", csv("Country codes", "e.g. 'NL, DE, BE'.")),
     ("tags_mode", mode("Tags", "Filter by genre tags.")),
@@ -140,37 +131,18 @@ FILTERS = [
     ),
 ]
 
-REQUIREMENTS = [
-    (
-        "require_countrycode",
-        {
-            "type": "boolean",
-            "title": "Require country code",
-            "description": "Skip stations without a country code.",
-            "default": False,
-        },
-    ),
-    (
-        "require_homepage",
-        {
-            "type": "boolean",
-            "title": "Require homepage",
-            "description": "Skip stations without a homepage. The web player fetches the favicon logo from the homepage.",
-            "default": False,
-        },
-    ),
-    (
-        "require_geo",
-        {
-            "type": "boolean",
-            "title": "Require geo coordinates",
-            "description": "Skip stations without geo coordinates.",
-            "default": False,
-        },
-    ),
-]
+REQUIREMENTS = []
 
 BEHAVIOUR = [
+    (
+        "hide_broken",
+        {
+            "type": "boolean",
+            "title": "Hide broken stations",
+            "description": "Only include stations that are currently reachable (Radio-Browser lastcheckok).",
+            "default": True,
+        },
+    ),
     (
         "prune_missing",
         {
@@ -200,7 +172,7 @@ def group(label: str, elements: list[dict]) -> dict:
 
 def build() -> dict:
     properties: dict = {}
-    for key, frag in SYNC + NAMING + FILTERS + REQUIREMENTS + BEHAVIOUR:
+    for key, frag in SYNC + NAMING + FILTERS + BEHAVIOUR:
         properties[key] = frag
 
     ui_schema = {
@@ -211,7 +183,6 @@ def build() -> dict:
             group(
                 "Filters",
                 [
-                    control("hide_broken"),
                     horizontal("countrycodes_mode", "countrycodes"),
                     horizontal("tags_mode", "tags"),
                     horizontal("languagecodes_mode", "languagecodes"),
@@ -219,15 +190,7 @@ def build() -> dict:
                     horizontal("min_bitrate", "min_votes"),
                 ],
             ),
-            group(
-                "Requirements",
-                [
-                    control("require_countrycode"),
-                    control("require_homepage"),
-                    control("require_geo"),
-                ],
-            ),
-            group("Behaviour", [control("prune_missing")]),
+            group("Behaviour", [control("hide_broken"), control("prune_missing")]),
         ],
     }
 

@@ -34,7 +34,6 @@ func TestOverridesAndModeMapping(t *testing.T) {
 		"codecs":              "mp3",
 		"min_bitrate":         "128",
 		"min_votes":           "25",
-		"require_homepage":    "true",
 		"dry_run":             "true",
 		"run_on_save":         "true",
 	}
@@ -57,8 +56,8 @@ func TestOverridesAndModeMapping(t *testing.T) {
 	if len(s.ExcludeCodecs) != 1 || s.ExcludeCodecs[0] != "mp3" {
 		t.Fatalf("codecs: %v", s.ExcludeCodecs)
 	}
-	if s.MinBitrate != 128 || s.MinVotes != 25 || !s.RequireHomepage || !s.DryRun || !s.RunOnSave {
-		t.Fatalf("min=%d votes=%d hp=%v dry=%v runonsave=%v", s.MinBitrate, s.MinVotes, s.RequireHomepage, s.DryRun, s.RunOnSave)
+	if s.MinBitrate != 128 || s.MinVotes != 25 || !s.DryRun || !s.RunOnSave {
+		t.Fatalf("min=%d votes=%d dry=%v runonsave=%v", s.MinBitrate, s.MinVotes, s.DryRun, s.RunOnSave)
 	}
 }
 

@@ -25,12 +25,8 @@ func TestHideBroken(t *testing.T) {
 	}
 }
 
-func TestRequireCountryCodeAndInclude(t *testing.T) {
+func TestIncludeCountryCodes(t *testing.T) {
 	s := settings.Defaults()
-	s.RequireCountryCode = true
-	if d := Apply(s, st(`{"name":"A","url":"http://x","lastcheckok":1,"countrycode":""}`)); d.Keep {
-		t.Fatal("no code should drop")
-	}
 	s.IncludeCountryCodes = []string{"NL", "DE"}
 	if d := Apply(s, st(`{"name":"A","url":"http://x","lastcheckok":1,"countrycode":"US"}`)); d.Keep {
 		t.Fatal("US should drop")
@@ -71,18 +67,4 @@ func TestBitrateAndCodec(t *testing.T) {
 	}
 }
 
-func TestRequireHomepageAndGeo(t *testing.T) {
-	s := settings.Defaults()
-	s.RequireHomepage = true
-	if d := Apply(s, st(`{"name":"A","url":"http://x","lastcheckok":1,"homepage":""}`)); d.Keep {
-		t.Fatal("no homepage should drop")
-	}
-	s = settings.Defaults()
-	s.RequireGeo = true
-	if d := Apply(s, st(`{"name":"A","url":"http://x","lastcheckok":1}`)); d.Keep {
-		t.Fatal("no geo should drop")
-	}
-	if d := Apply(s, st(`{"name":"A","url":"http://x","lastcheckok":1,"geo_lat":1.0,"geo_long":2.0}`)); !d.Keep {
-		t.Fatal("geo should keep")
-	}
-}
+

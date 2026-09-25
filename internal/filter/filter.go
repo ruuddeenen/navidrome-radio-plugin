@@ -31,9 +31,6 @@ func Apply(s settings.Settings, st radiobrowser.Station) Decision {
 	}
 
 	code := strings.ToUpper(strings.TrimSpace(st.Str("countrycode")))
-	if s.RequireCountryCode && code == "" {
-		return reject("no_countrycode")
-	}
 	if len(s.IncludeCountryCodes) > 0 && !contains(s.IncludeCountryCodes, code) {
 		return reject("countrycode_not_included")
 	}
@@ -71,17 +68,6 @@ func Apply(s settings.Settings, st radiobrowser.Station) Decision {
 
 	if s.MinVotes > 0 && st.Int("votes") < s.MinVotes {
 		return reject("votes_below_min")
-	}
-	if s.RequireHomepage && strings.TrimSpace(st.Str("homepage")) == "" {
-		return reject("no_homepage")
-	}
-	if s.RequireGeo {
-		if _, ok := st.Float("geo_lat"); !ok {
-			return reject("no_geo")
-		}
-		if _, ok := st.Float("geo_long"); !ok {
-			return reject("no_geo")
-		}
 	}
 
 	return Decision{Keep: true}

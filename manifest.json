@@ -32,12 +32,6 @@
           "description": "Builds the station name. Placeholders: {name} {url} {url_resolved} {homepage} {favicon} {tags} {tag} {countrycode} {country} {countrysubdivisioncode} {countrysubdivision} {language} {languages} {languagecodes} {codec} {geoinfo}, plus any raw Radio-Browser field. Use {field?:default} for a fallback. Empty bracket groups such as [] are removed.",
           "default": "[{countrycode?:OTHER}] [{tags}] {name}"
         },
-        "hide_broken": {
-          "type": "boolean",
-          "title": "Hide broken stations",
-          "description": "Only include stations that are currently reachable (Radio-Browser lastcheckok).",
-          "default": true
-        },
         "countrycodes_mode": {
           "type": "string",
           "title": "Country codes",
@@ -180,23 +174,11 @@
           "description": "Skip stations with fewer votes. 0 = no minimum.",
           "default": 0
         },
-        "require_countrycode": {
+        "hide_broken": {
           "type": "boolean",
-          "title": "Require country code",
-          "description": "Skip stations without a country code.",
-          "default": false
-        },
-        "require_homepage": {
-          "type": "boolean",
-          "title": "Require homepage",
-          "description": "Skip stations without a homepage. The web player fetches the favicon logo from the homepage.",
-          "default": false
-        },
-        "require_geo": {
-          "type": "boolean",
-          "title": "Require geo coordinates",
-          "description": "Skip stations without geo coordinates.",
-          "default": false
+          "title": "Hide broken stations",
+          "description": "Only include stations that are currently reachable (Radio-Browser lastcheckok).",
+          "default": true
         },
         "prune_missing": {
           "type": "boolean",
@@ -245,10 +227,6 @@
           "type": "Group",
           "label": "Filters",
           "elements": [
-            {
-              "type": "Control",
-              "scope": "#/properties/hide_broken"
-            },
             {
               "type": "HorizontalLayout",
               "elements": [
@@ -318,26 +296,12 @@
         },
         {
           "type": "Group",
-          "label": "Requirements",
-          "elements": [
-            {
-              "type": "Control",
-              "scope": "#/properties/require_countrycode"
-            },
-            {
-              "type": "Control",
-              "scope": "#/properties/require_homepage"
-            },
-            {
-              "type": "Control",
-              "scope": "#/properties/require_geo"
-            }
-          ]
-        },
-        {
-          "type": "Group",
           "label": "Behaviour",
           "elements": [
+            {
+              "type": "Control",
+              "scope": "#/properties/hide_broken"
+            },
             {
               "type": "Control",
               "scope": "#/properties/prune_missing"

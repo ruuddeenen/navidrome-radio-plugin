@@ -36,7 +36,6 @@ type Settings struct {
 
 	// Filters.
 	HideBroken           bool
-	RequireCountryCode   bool
 	IncludeCountryCodes  []string
 	ExcludeCountryCodes  []string
 	IncludeTags          []string
@@ -47,8 +46,6 @@ type Settings struct {
 	ExcludeCodecs        []string
 	MinBitrate           int
 	MinVotes             int
-	RequireHomepage      bool
-	RequireGeo           bool
 
 	// Limits.
 	MaxStations int
@@ -86,10 +83,6 @@ func Load(get Getter) Settings {
 	s.NameTemplate = value(get, "name_template", s.NameTemplate)
 
 	s.HideBroken = boolean(get, "hide_broken", s.HideBroken)
-
-	s.RequireCountryCode = boolean(get, "require_countrycode", false)
-	s.RequireHomepage = boolean(get, "require_homepage", false)
-	s.RequireGeo = boolean(get, "require_geo", false)
 
 	applyMode(&s.IncludeCountryCodes, &s.ExcludeCountryCodes,
 		value(get, "countrycodes_mode", "exclude"), upperList(value(get, "countrycodes", "")))

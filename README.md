@@ -60,11 +60,10 @@ The settings UI is grouped into sections:
 - **Synchronization** – `sync_cron`, `dry_run`, `run_on_save` (when enabled,
   runs a one-time sync whenever the settings are saved; default off).
 - **Naming** – `name_template`.
-- **Filters** – `hide_broken`; for each of country codes, tags, language codes
-  and codecs an include/exclude toggle plus a comma-separated list (empty = no
-  filter); `min_bitrate` and `min_votes`.
-- **Requirements** – `require_countrycode`, `require_homepage`, `require_geo`.
-- **Behaviour** – `prune_missing`.
+- **Filters** – for each of country codes, tags, language codes and codecs an
+  include/exclude toggle plus a comma-separated list (empty = no filter);
+  `min_bitrate` and `min_votes`.
+- **Behaviour** – `hide_broken`, `prune_missing`.
 
 Rendered station names are capped at 2048 characters.
 
