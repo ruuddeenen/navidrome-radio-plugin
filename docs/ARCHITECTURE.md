@@ -2,7 +2,7 @@
 
 ```
 Navidrome (WASM sandbox)
-  └── navidrome-radio-sync-plugin.ndp
+  └── automatic-radio-sync.ndp
         main.go                 Lifecycle / Scheduler / TaskWorker entry points
         internal/
           settings     config -> Settings (defaults, list normalization)

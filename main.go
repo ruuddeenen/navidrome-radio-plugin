@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// Entry point for the Navidrome Radio Sync Plugin.
+// Entry point for the Automatic Radio Sync plugin.
 //
 // A scheduled task periodically fetches internet radio stations from
 // radio-browser.info, applies the configured filters and creates/updates/removes
@@ -25,7 +25,7 @@ import (
 
 const (
 	queueName   = "radio-sync"
-	scheduleID  = "navidrome-radio-sync"
+	scheduleID  = "automatic-radio-sync"
 	payloadSync = "sync"
 
 	kindStart = "start"
@@ -65,7 +65,7 @@ func (p *plugin) OnInit() error {
 	if _, err := host.SchedulerScheduleOneTime(20, payloadSync, scheduleID+"-initial"); err != nil {
 		pdk.Log(pdk.LogWarn, "failed to schedule initial radio sync: "+err.Error())
 	}
-	pdk.Log(pdk.LogInfo, "navidrome-radio-sync-plugin ready; cron="+s.SyncCron)
+	pdk.Log(pdk.LogInfo, "automatic-radio-sync ready; cron="+s.SyncCron)
 	return nil
 }
 

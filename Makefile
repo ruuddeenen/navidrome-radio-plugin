@@ -1,4 +1,4 @@
-# Build tooling for the Navidrome Radio Sync Plugin.
+# Build tooling for the Automatic Radio Sync plugin.
 #
 # The Navidrome plugin PDK is not published as a versioned Go module, so `deps`
 # clones Navidrome at the pinned version into .build/navidrome and go.mod points
@@ -6,7 +6,7 @@
 
 NAVIDROME_VERSION ?= v0.64.1
 NAVIDROME_SRC     ?= $(CURDIR)/.build/navidrome
-PLUGIN_ID         := navidrome-radio-sync-plugin
+PLUGIN_ID         := automatic-radio-sync
 GO_IMAGE          ?= golang:1.25
 TINYGO_IMAGE      ?= tinygo/tinygo:latest
 

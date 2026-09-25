@@ -1,7 +1,7 @@
 {
-  "name": "Navidrome Radio Sync Plugin",
+  "name": "Automatic Radio Sync",
   "author": "Ruud Deenen",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Periodically syncs internet radio stations from radio-browser.info into Navidrome, with configurable cron, name template and filters.",
   "website": "https://github.com/ruuddeenen/navidrome-radio-sync-plugin",
   "config": {
@@ -10,121 +10,121 @@
       "properties": {
         "sync_cron": {
           "type": "string",
-          "title": "Sync-planning (cron)",
-          "description": "Cron-expressie: minuut uur dag maand weekdag (bijv. '30 1 * * *' = dagelijks 01:30).",
+          "title": "Sync schedule (cron)",
+          "description": "Cron expression: minute hour day month weekday (e.g. '30 1 * * *' = daily at 01:30).",
           "default": "30 1 * * *"
         },
         "dry_run": {
           "type": "boolean",
           "title": "Dry run",
-          "description": "Alleen berekenen en loggen, niets aanpassen in Navidrome.",
+          "description": "Only compute and log, do not change anything in Navidrome.",
           "default": false
         },
         "name_template": {
           "type": "string",
-          "title": "Naam-template",
-          "description": "Bepaalt de zendernaam. Placeholders: {name} {url} {url_resolved} {homepage} {favicon} {tags} {tag} {countrycode} {country} {countrysubdivisioncode} {countrysubdivision} {language} {languages} {languagecodes} {codec} {geoinfo}, plus elk ruw Radio-Browser-veld. Gebruik {veld?:standaard} voor een terugval. Lege haakjes zoals [] worden verwijderd.",
+          "title": "Name template",
+          "description": "Builds the station name. Placeholders: {name} {url} {url_resolved} {homepage} {favicon} {tags} {tag} {countrycode} {country} {countrysubdivisioncode} {countrysubdivision} {language} {languages} {languagecodes} {codec} {geoinfo}, plus any raw Radio-Browser field. Use {field?:default} for a fallback. Empty bracket groups such as [] are removed.",
           "default": "[{countrycode?:OTHER}] [{tags}] {name}"
         },
         "hide_broken": {
           "type": "boolean",
-          "title": "Kapotte zenders verbergen",
-          "description": "Alleen zenders die op dit moment bereikbaar zijn (Radio-Browser lastcheckok).",
+          "title": "Hide broken stations",
+          "description": "Only include stations that are currently reachable (Radio-Browser lastcheckok).",
           "default": true
         },
         "countrycodes_mode": {
           "type": "string",
-          "title": "Landcodes",
-          "description": "Filter op ISO-landcode. Kies 'Uitsluiten' of 'Alleen deze'.",
+          "title": "Country codes",
+          "description": "Filter by ISO country code.",
           "default": "exclude",
           "oneOf": [
             {
               "const": "exclude",
-              "title": "Uitsluiten"
+              "title": "Exclude"
             },
             {
               "const": "include",
-              "title": "Alleen deze"
+              "title": "Include only"
             }
           ]
         },
         "countrycodes": {
           "type": "string",
-          "title": "Landcodes",
-          "description": "Bijv. 'NL, DE, BE'. Komma-gescheiden. Leeg = geen filter."
+          "title": "Country codes",
+          "description": "e.g. 'NL, DE, BE'. Comma-separated. Empty = no filter."
         },
         "tags_mode": {
           "type": "string",
           "title": "Tags",
-          "description": "Filter op genre-tags.",
+          "description": "Filter by genre tags.",
           "default": "exclude",
           "oneOf": [
             {
               "const": "exclude",
-              "title": "Uitsluiten"
+              "title": "Exclude"
             },
             {
               "const": "include",
-              "title": "Alleen deze"
+              "title": "Include only"
             }
           ]
         },
         "tags": {
           "type": "string",
           "title": "Tags",
-          "description": "Bijv. 'jazz, classical'. Komma-gescheiden. Leeg = geen filter."
+          "description": "e.g. 'jazz, classical'. Comma-separated. Empty = no filter."
         },
         "languagecodes_mode": {
           "type": "string",
-          "title": "Taalcodes",
-          "description": "Filter op taalcode.",
+          "title": "Language codes",
+          "description": "Filter by language code.",
           "default": "exclude",
           "oneOf": [
             {
               "const": "exclude",
-              "title": "Uitsluiten"
+              "title": "Exclude"
             },
             {
               "const": "include",
-              "title": "Alleen deze"
+              "title": "Include only"
             }
           ]
         },
         "languagecodes": {
           "type": "string",
-          "title": "Taalcodes",
-          "description": "Bijv. 'en, nl'. Komma-gescheiden. Leeg = geen filter."
+          "title": "Language codes",
+          "description": "e.g. 'en, nl'. Comma-separated. Empty = no filter."
         },
         "codecs_mode": {
           "type": "string",
           "title": "Codecs",
-          "description": "Filter op audiocodec.",
+          "description": "Filter by audio codec.",
           "default": "exclude",
           "oneOf": [
             {
               "const": "exclude",
-              "title": "Uitsluiten"
+              "title": "Exclude"
             },
             {
               "const": "include",
-              "title": "Alleen deze"
+              "title": "Include only"
             }
           ]
         },
         "codecs": {
           "type": "string",
           "title": "Codecs",
-          "description": "Bijv. 'mp3, aac'. Komma-gescheiden. Leeg = geen filter."
+          "description": "e.g. 'mp3, aac'. Comma-separated. Empty = no filter."
         },
         "min_bitrate": {
           "type": "string",
           "title": "Minimum bitrate",
-          "description": "Sla zenders met een lagere bitrate over.",
+          "description": "Skip stations with a lower bitrate.",
           "default": "0",
           "oneOf": [
             {
               "const": "0",
-              "title": "Geen minimum"
+              "title": "No minimum"
             },
             {
               "const": "32",
@@ -171,31 +171,31 @@
         "min_votes": {
           "type": "integer",
           "title": "Minimum votes",
-          "description": "Sla zenders met minder stemmen over. 0 = geen minimum.",
+          "description": "Skip stations with fewer votes. 0 = no minimum.",
           "default": 0
         },
         "require_countrycode": {
           "type": "boolean",
-          "title": "Landcode vereist",
-          "description": "Sla zenders zonder landcode over.",
+          "title": "Require country code",
+          "description": "Skip stations without a country code.",
           "default": false
         },
         "require_homepage": {
           "type": "boolean",
-          "title": "Homepage vereist",
-          "description": "Sla zenders zonder homepage over. De webspeler haalt het favicon-logo van de homepage.",
+          "title": "Require homepage",
+          "description": "Skip stations without a homepage. The web player fetches the favicon logo from the homepage.",
           "default": false
         },
         "require_geo": {
           "type": "boolean",
-          "title": "Geo-coördinaten vereist",
-          "description": "Sla zenders zonder geo-coördinaten over.",
+          "title": "Require geo coordinates",
+          "description": "Skip stations without geo coordinates.",
           "default": false
         },
         "prune_missing": {
           "type": "boolean",
-          "title": "Niet-passende zenders verwijderen",
-          "description": "Verwijdert zenders die niet meer in de gefilterde set zitten. De plugin beheert de hele radiolijst.",
+          "title": "Remove non-matching stations",
+          "description": "Removes stations that no longer match the filtered set. The plugin manages the entire radio list.",
           "default": true
         }
       },
@@ -206,7 +206,7 @@
       "elements": [
         {
           "type": "Group",
-          "label": "Synchronisatie",
+          "label": "Synchronization",
           "elements": [
             {
               "type": "Control",
@@ -220,7 +220,7 @@
         },
         {
           "type": "Group",
-          "label": "Naamgeving",
+          "label": "Naming",
           "elements": [
             {
               "type": "Control",
@@ -308,7 +308,7 @@
         },
         {
           "type": "Group",
-          "label": "Vereisten",
+          "label": "Requirements",
           "elements": [
             {
               "type": "Control",
@@ -326,7 +326,7 @@
         },
         {
           "type": "Group",
-          "label": "Gedrag",
+          "label": "Behaviour",
           "elements": [
             {
               "type": "Control",

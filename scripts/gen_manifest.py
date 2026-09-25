@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate manifest.json for the Navidrome Radio Sync Plugin.
+"""Generate manifest.json for the Automatic Radio Sync plugin.
 
 The settings are grouped into sections (JSONForms `Group`) and every field has a
 `description`, which Navidrome shows as a hint under the input.
@@ -20,8 +20,8 @@ def mode(title: str, description: str) -> dict:
         "description": description,
         "default": "exclude",
         "oneOf": [
-            {"const": "exclude", "title": "Uitsluiten"},
-            {"const": "include", "title": "Alleen deze"},
+            {"const": "exclude", "title": "Exclude"},
+            {"const": "include", "title": "Include only"},
         ],
     }
 
@@ -30,12 +30,12 @@ def csv(title: str, description: str) -> dict:
     return {
         "type": "string",
         "title": title,
-        "description": description + " Komma-gescheiden. Leeg = geen filter.",
+        "description": description + " Comma-separated. Empty = no filter.",
     }
 
 
 BITRATES = [
-    ("0", "Geen minimum"),
+    ("0", "No minimum"),
     ("32", "32 kbps"),
     ("48", "48 kbps"),
     ("64", "64 kbps"),
@@ -53,8 +53,8 @@ SYNC = [
         "sync_cron",
         {
             "type": "string",
-            "title": "Sync-planning (cron)",
-            "description": "Cron-expressie: minuut uur dag maand weekdag (bijv. '30 1 * * *' = dagelijks 01:30).",
+            "title": "Sync schedule (cron)",
+            "description": "Cron expression: minute hour day month weekday (e.g. '30 1 * * *' = daily at 01:30).",
             "default": "30 1 * * *",
         },
     ),
@@ -63,7 +63,7 @@ SYNC = [
         {
             "type": "boolean",
             "title": "Dry run",
-            "description": "Alleen berekenen en loggen, niets aanpassen in Navidrome.",
+            "description": "Only compute and log, do not change anything in Navidrome.",
             "default": False,
         },
     ),
@@ -74,14 +74,14 @@ NAMING = [
         "name_template",
         {
             "type": "string",
-            "title": "Naam-template",
+            "title": "Name template",
             "description": (
-                "Bepaalt de zendernaam. Placeholders: {name} {url} {url_resolved} "
+                "Builds the station name. Placeholders: {name} {url} {url_resolved} "
                 "{homepage} {favicon} {tags} {tag} {countrycode} {country} "
                 "{countrysubdivisioncode} {countrysubdivision} {language} "
-                "{languages} {languagecodes} {codec} {geoinfo}, plus elk ruw "
-                "Radio-Browser-veld. Gebruik {veld?:standaard} voor een terugval. "
-                "Lege haakjes zoals [] worden verwijderd."
+                "{languages} {languagecodes} {codec} {geoinfo}, plus any raw "
+                "Radio-Browser field. Use {field?:default} for a fallback. Empty "
+                "bracket groups such as [] are removed."
             ),
             "default": "[{countrycode?:OTHER}] [{tags}] {name}",
         },
@@ -93,25 +93,25 @@ FILTERS = [
         "hide_broken",
         {
             "type": "boolean",
-            "title": "Kapotte zenders verbergen",
-            "description": "Alleen zenders die op dit moment bereikbaar zijn (Radio-Browser lastcheckok).",
+            "title": "Hide broken stations",
+            "description": "Only include stations that are currently reachable (Radio-Browser lastcheckok).",
             "default": True,
         },
     ),
-    ("countrycodes_mode", mode("Landcodes", "Filter op ISO-landcode. Kies 'Uitsluiten' of 'Alleen deze'.")),
-    ("countrycodes", csv("Landcodes", "Bijv. 'NL, DE, BE'.")),
-    ("tags_mode", mode("Tags", "Filter op genre-tags.")),
-    ("tags", csv("Tags", "Bijv. 'jazz, classical'.")),
-    ("languagecodes_mode", mode("Taalcodes", "Filter op taalcode.")),
-    ("languagecodes", csv("Taalcodes", "Bijv. 'en, nl'.")),
-    ("codecs_mode", mode("Codecs", "Filter op audiocodec.")),
-    ("codecs", csv("Codecs", "Bijv. 'mp3, aac'.")),
+    ("countrycodes_mode", mode("Country codes", "Filter by ISO country code.")),
+    ("countrycodes", csv("Country codes", "e.g. 'NL, DE, BE'.")),
+    ("tags_mode", mode("Tags", "Filter by genre tags.")),
+    ("tags", csv("Tags", "e.g. 'jazz, classical'.")),
+    ("languagecodes_mode", mode("Language codes", "Filter by language code.")),
+    ("languagecodes", csv("Language codes", "e.g. 'en, nl'.")),
+    ("codecs_mode", mode("Codecs", "Filter by audio codec.")),
+    ("codecs", csv("Codecs", "e.g. 'mp3, aac'.")),
     (
         "min_bitrate",
         {
             "type": "string",
             "title": "Minimum bitrate",
-            "description": "Sla zenders met een lagere bitrate over.",
+            "description": "Skip stations with a lower bitrate.",
             "default": "0",
             "oneOf": [{"const": v, "title": label} for v, label in BITRATES],
         },
@@ -121,7 +121,7 @@ FILTERS = [
         {
             "type": "integer",
             "title": "Minimum votes",
-            "description": "Sla zenders met minder stemmen over. 0 = geen minimum.",
+            "description": "Skip stations with fewer votes. 0 = no minimum.",
             "default": 0,
         },
     ),
@@ -132,8 +132,8 @@ REQUIREMENTS = [
         "require_countrycode",
         {
             "type": "boolean",
-            "title": "Landcode vereist",
-            "description": "Sla zenders zonder landcode over.",
+            "title": "Require country code",
+            "description": "Skip stations without a country code.",
             "default": False,
         },
     ),
@@ -141,8 +141,8 @@ REQUIREMENTS = [
         "require_homepage",
         {
             "type": "boolean",
-            "title": "Homepage vereist",
-            "description": "Sla zenders zonder homepage over. De webspeler haalt het favicon-logo van de homepage.",
+            "title": "Require homepage",
+            "description": "Skip stations without a homepage. The web player fetches the favicon logo from the homepage.",
             "default": False,
         },
     ),
@@ -150,8 +150,8 @@ REQUIREMENTS = [
         "require_geo",
         {
             "type": "boolean",
-            "title": "Geo-coördinaten vereist",
-            "description": "Sla zenders zonder geo-coördinaten over.",
+            "title": "Require geo coordinates",
+            "description": "Skip stations without geo coordinates.",
             "default": False,
         },
     ),
@@ -162,8 +162,8 @@ BEHAVIOUR = [
         "prune_missing",
         {
             "type": "boolean",
-            "title": "Niet-passende zenders verwijderen",
-            "description": "Verwijdert zenders die niet meer in de gefilterde set zitten. De plugin beheert de hele radiolijst.",
+            "title": "Remove non-matching stations",
+            "description": "Removes stations that no longer match the filtered set. The plugin manages the entire radio list.",
             "default": True,
         },
     ),
@@ -193,8 +193,8 @@ def build() -> dict:
     ui_schema = {
         "type": "VerticalLayout",
         "elements": [
-            group("Synchronisatie", [control("sync_cron"), control("dry_run")]),
-            group("Naamgeving", [control("name_template", {"multi": True})]),
+            group("Synchronization", [control("sync_cron"), control("dry_run")]),
+            group("Naming", [control("name_template", {"multi": True})]),
             group(
                 "Filters",
                 [
@@ -207,21 +207,21 @@ def build() -> dict:
                 ],
             ),
             group(
-                "Vereisten",
+                "Requirements",
                 [
                     control("require_countrycode"),
                     control("require_homepage"),
                     control("require_geo"),
                 ],
             ),
-            group("Gedrag", [control("prune_missing")]),
+            group("Behaviour", [control("prune_missing")]),
         ],
     }
 
     return {
-        "name": "Navidrome Radio Sync Plugin",
+        "name": "Automatic Radio Sync",
         "author": "Ruud Deenen",
-        "version": "0.2.0",
+        "version": "0.3.0",
         "description": (
             "Periodically syncs internet radio stations from radio-browser.info into "
             "Navidrome, with configurable cron, name template and filters."

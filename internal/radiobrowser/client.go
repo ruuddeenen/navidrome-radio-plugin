@@ -17,7 +17,7 @@ var DefaultMirrors = []string{
 	"https://fr1.api.radio-browser.info",
 }
 
-const defaultUserAgent = "navidrome-radio-sync-plugin/0.1 (+https://github.com/ruuddeenen/navidrome-radio-sync-plugin)"
+const defaultUserAgent = "automatic-radio-sync/0.3 (+https://github.com/ruuddeenen/navidrome-radio-sync-plugin)"
 
 // Doer performs an HTTP request and returns status code and body.
 type Doer interface {
