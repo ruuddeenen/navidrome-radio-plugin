@@ -41,13 +41,19 @@ Navidrome (WASM sandbox)
 
 Because the Subsonic API has no bulk create, the full list is reconciled:
 
+Navidrome enforces a case-insensitive `UNIQUE` on the station name, so the name
+is the reconciliation key: the desired set is deduped by name (highest score
+wins) and existing stations are matched by name. Legacy accent/case duplicates
+that SQLite's `NOCASE` does not fold are detected and removed during `index`.
+
 1. `plan` – fetch radio-browser pages, filter + render, persist the desired set
    and a cursor in KVStore.
-2. `index` – one `getInternetRadioStations` call builds `stream_url → id`.
-3. `apply` – per batch: match on stream URL, update when changed, otherwise
-   create (a duplicate-name error means it already exists).
-4. `finalize` – re-index to learn newly created IDs and prune stations that no
-   longer match (when `prune_missing`).
+2. `index` – one `getInternetRadioStations` call builds `name → id` (plus any
+   accent/case duplicates to remove).
+3. `apply` – per bucket: dedupe by name, match by name, update when the URL or
+   homepage changed, otherwise create.
+4. `finalize` – the same apply pass prunes stations that no longer match (when
+   `prune_missing`).
 
 All phases are resumable through the KVStore cursor and idempotent.
 

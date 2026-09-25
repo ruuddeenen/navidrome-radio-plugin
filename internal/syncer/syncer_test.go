@@ -41,7 +41,7 @@ func (f *fakeFetcher) Page(offset int) ([]radiobrowser.Station, error) {
 }
 
 type fakeAPI struct {
-	existing             []subsonic.Radio
+	existing                  []subsonic.Radio
 	creates, updates, deletes int
 }
 
@@ -60,12 +60,38 @@ func (f *fakeAPI) Delete(id string) error {
 }
 
 func station(name, url string) radiobrowser.Station {
-	body := `[{"name":"` + name + `","url":"` + url + `","url_resolved":"` + url + `","lastcheckok":1}]`
+	return stationWithVotes(name, url, 0)
+}
+
+func stationWithVotes(name, url string, votes int) radiobrowser.Station {
+	body := `[{"name":"` + name + `","url":"` + url + `","url_resolved":"` + url + `","lastcheckok":1,"votes":` + itoa(votes) + `}]`
 	stations, err := radiobrowser.ParseStations([]byte(body))
 	if err != nil {
 		panic(err)
 	}
 	return stations[0]
+}
+
+func itoa(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	negative := n < 0
+	if negative {
+		n = -n
+	}
+	var buf [20]byte
+	i := len(buf)
+	for n > 0 {
+		i--
+		buf[i] = byte('0' + n%10)
+		n /= 10
+	}
+	if negative {
+		i--
+		buf[i] = '-'
+	}
+	return string(buf[i:])
 }
 
 func runAll(t *testing.T, r *Runner) {
@@ -119,11 +145,11 @@ func TestCreateOnly(t *testing.T) {
 }
 
 func TestUpdateChanged(t *testing.T) {
-	api := &fakeAPI{existing: []subsonic.Radio{{ID: "1", Name: "Old", StreamURL: "http://a"}}}
+	api := &fakeAPI{existing: []subsonic.Radio{{ID: "1", Name: "A", StreamURL: "http://old"}}}
 	r := &Runner{
 		S:     baseSettings(),
 		Store: newMemStore(),
-		Fetch: &fakeFetcher{pages: map[int][]radiobrowser.Station{0: {station("New", "http://a")}}},
+		Fetch: &fakeFetcher{pages: map[int][]radiobrowser.Station{0: {station("A", "http://new")}}},
 		API:   api,
 	}
 	runAll(t, r)
@@ -143,6 +169,39 @@ func TestPruneMissing(t *testing.T) {
 	runAll(t, r)
 	if api.deletes != 1 || api.creates != 0 {
 		t.Fatalf("creates=%d deletes=%d", api.creates, api.deletes)
+	}
+}
+
+func TestDedupeSameName(t *testing.T) {
+	api := &fakeAPI{}
+	r := &Runner{
+		S:     baseSettings(),
+		Store: newMemStore(),
+		Fetch: &fakeFetcher{pages: map[int][]radiobrowser.Station{
+			0: {stationWithVotes("Dup", "http://low", 10), stationWithVotes("Dup", "http://high", 9999)},
+		}},
+		API: api,
+	}
+	runAll(t, r)
+	if api.creates != 1 {
+		t.Fatalf("expected a single create after dedupe, got %d", api.creates)
+	}
+}
+
+func TestRemovesCaseDuplicates(t *testing.T) {
+	api := &fakeAPI{existing: []subsonic.Radio{
+		{ID: "1", Name: "[SK] Rádio Expres", StreamURL: "http://a"},
+		{ID: "2", Name: "[SK] RÁDIO EXPRES", StreamURL: "http://b"},
+	}}
+	r := &Runner{
+		S:     baseSettings(),
+		Store: newMemStore(),
+		Fetch: &fakeFetcher{pages: map[int][]radiobrowser.Station{}},
+		API:   api,
+	}
+	runAll(t, r)
+	if api.deletes != 2 {
+		t.Fatalf("expected both case-variant rows removed, deletes=%d", api.deletes)
 	}
 }
 

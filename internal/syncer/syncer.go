@@ -3,6 +3,11 @@
 // Package syncer implements the resumable plan/index/apply state machine that
 // reconciles radio-browser stations with Navidrome's internet radio stations.
 //
+// Navidrome enforces a case-insensitive UNIQUE constraint on the station name,
+// so the station *name* is the reconciliation key: the desired set is deduped by
+// name (highest score wins) and existing stations are matched by name. This
+// mirrors the behaviour of the original navidrome-radio-sync script.
+//
 // It is intentionally free of PDK imports: the key-value store, HTTP fetch and
 // Subsonic API are injected as interfaces so the logic is unit tested.
 package syncer
@@ -28,12 +33,13 @@ const Buckets = 256
 
 // Entry is a desired station as persisted during the plan phase.
 type Entry struct {
-	Name string `json:"n"`
-	URL  string `json:"u"`
-	Home string `json:"h"`
+	Name  string `json:"n"`
+	URL   string `json:"u"`
+	Home  string `json:"h"`
+	Score int64  `json:"s,omitempty"`
 }
 
-// Existing is a station already present in Navidrome, keyed by stream URL.
+// Existing is a station already present in Navidrome, keyed by name.
 type Existing struct {
 	ID   string `json:"i"`
 	Hash string `json:"x"`
@@ -124,7 +130,7 @@ func (r *Runner) Plan() (Action, error) {
 		if entry.Name == "" || entry.URL == "" {
 			continue
 		}
-		bucket := bucketOf(entry.URL)
+		bucket := bucketOf(entry.Name)
 		grouped[bucket] = append(grouped[bucket], entry)
 		kept++
 	}
@@ -143,7 +149,8 @@ func (r *Runner) Plan() (Action, error) {
 	return Action{Kind: "plan"}, nil
 }
 
-// Index reads the existing Navidrome stations and stores them in shards.
+// Index reads the existing Navidrome stations and stores them in shards, keyed
+// by the case-insensitive station name.
 func (r *Runner) Index() (Action, error) {
 	radios, err := r.API.List()
 	if err != nil {
@@ -153,19 +160,34 @@ func (r *Runner) Index() (Action, error) {
 	}
 
 	group := make([]map[string]Existing, Buckets)
+	dupes := make([][]string, Buckets)
 	for i := range group {
 		group[i] = map[string]Existing{}
 	}
 	for _, radio := range radios {
-		if strings.TrimSpace(radio.StreamURL) == "" {
+		name := strings.TrimSpace(radio.Name)
+		if name == "" {
 			continue
 		}
-		bucket := bucketOf(radio.StreamURL)
-		group[bucket][radio.StreamURL] = Existing{ID: radio.ID, Hash: hashText(radio.Name + "|" + radio.HomepageURL)}
+		key := strings.ToLower(name)
+		bucket := bucketOf(name)
+		if _, exists := group[bucket][key]; exists {
+			// A row that only differs in (non-ASCII) case. SQLite's NOCASE does
+			// not fold those, but the name collides for our reconciliation:
+			// keep the first and mark the extra for removal.
+			dupes[bucket] = append(dupes[bucket], radio.ID)
+			continue
+		}
+		group[bucket][key] = Existing{ID: radio.ID, Hash: hashText(radio.StreamURL + "|" + radio.HomepageURL)}
 	}
 	for bucket := 0; bucket < Buckets; bucket++ {
 		if err := r.setJSON(fmt.Sprintf("have:%d", bucket), group[bucket]); err != nil {
 			return Action{}, err
+		}
+		if len(dupes[bucket]) > 0 {
+			if err := r.setJSON(fmt.Sprintf("dupes:%d", bucket), dupes[bucket]); err != nil {
+				return Action{}, err
+			}
 		}
 	}
 	r.set("sync:index_ok", "1")
@@ -179,32 +201,59 @@ func (r *Runner) Apply(bucket int) (Action, error) {
 	if err != nil {
 		return Action{}, err
 	}
-	var want []Entry
+	deduped := map[string]Entry{}
 	for _, key := range keys {
-		if value, ok := r.Store.Get(key); ok {
-			var entries []Entry
-			if err := json.Unmarshal([]byte(value), &entries); err != nil {
-				return Action{}, err
+		value, ok := r.Store.Get(key)
+		if !ok {
+			continue
+		}
+		var entries []Entry
+		if err := json.Unmarshal([]byte(value), &entries); err != nil {
+			return Action{}, err
+		}
+		for _, entry := range entries {
+			nameKey := strings.ToLower(entry.Name)
+			if current, exists := deduped[nameKey]; !exists || entry.Score > current.Score {
+				deduped[nameKey] = entry
 			}
-			want = append(want, entries...)
 		}
 	}
 
+	indexOK := r.get("sync:index_ok") == "1"
 	have := map[string]Existing{}
-	if r.get("sync:index_ok") == "1" {
+	if indexOK {
 		if value, ok := r.Store.Get(fmt.Sprintf("have:%d", bucket)); ok {
 			_ = json.Unmarshal([]byte(value), &have)
 		}
 	}
 
 	created, updated, deleted, skipped, failed := 0, 0, 0, 0, 0
-	for _, entry := range want {
+
+	// Remove legacy accent/case duplicates first so name updates cannot collide.
+	if indexOK {
+		if value, ok := r.Store.Get(fmt.Sprintf("dupes:%d", bucket)); ok {
+			var ids []string
+			if err := json.Unmarshal([]byte(value), &ids); err == nil {
+				for _, id := range ids {
+					if r.S.DryRun {
+						deleted++
+					} else if err := r.API.Delete(id); err != nil {
+						failed++
+						r.log("delete duplicate %s failed: %v", id, err)
+					} else {
+						deleted++
+					}
+				}
+			}
+		}
+	}
+	for nameKey, entry := range deduped {
 		if r.budgetExhausted() {
 			break
 		}
-		if existing, ok := have[entry.URL]; ok {
-			delete(have, entry.URL)
-			if existing.Hash != hashText(entry.Name+"|"+entry.Home) {
+		if existing, ok := have[nameKey]; ok {
+			delete(have, nameKey)
+			if existing.Hash != hashText(entry.URL+"|"+entry.Home) {
 				if r.S.DryRun {
 					updated++
 				} else if err := r.API.Update(existing.ID, entry.Name, entry.URL, entry.Home); err != nil {
@@ -253,6 +302,7 @@ func (r *Runner) Apply(bucket int) (Action, error) {
 		r.Store.Delete(key)
 	}
 	r.Store.Delete(fmt.Sprintf("have:%d", bucket))
+	r.Store.Delete(fmt.Sprintf("dupes:%d", bucket))
 
 	r.add("sync:created", created)
 	r.add("sync:updated", updated)
@@ -289,7 +339,24 @@ func (r *Runner) entryFor(st radiobrowser.Station) Entry {
 	if home == "" && r.S.HomepageFallback {
 		home = originOf(streamURL)
 	}
-	return Entry{Name: name, URL: streamURL, Home: home}
+	return Entry{Name: name, URL: streamURL, Home: home, Score: scoreOf(st)}
+}
+
+// scoreOf ranks duplicate names so the "best" station wins (votes, clicks,
+// bitrate, working TLS, non-HLS), mirroring the original Python sync.
+func scoreOf(st radiobrowser.Station) int64 {
+	votes := int64(st.Int("votes"))
+	clicks := int64(st.Int("clickcount"))
+	bitrate := int64(st.Int("bitrate"))
+	sslOK := int64(0)
+	if st.Int("ssl_error") == 0 {
+		sslOK = 1
+	}
+	notHLS := int64(0)
+	if st.Int("hls") == 0 {
+		notHLS = 1
+	}
+	return votes*1_000_000_000 + clicks*1_000_000 + bitrate*1_000 + sslOK*100 + notHLS
 }
 
 func (r *Runner) budgetExhausted() bool {
@@ -359,8 +426,10 @@ func fnv32(s string) uint32 {
 	return hash
 }
 
-func bucketOf(streamURL string) int {
-	return int(fnv32(streamURL) % uint32(Buckets))
+// bucketOf shards by the case-insensitive name so that entries sharing a name
+// always land in the same bucket (needed for dedupe and name matching).
+func bucketOf(name string) int {
+	return int(fnv32(strings.ToLower(name)) % uint32(Buckets))
 }
 
 func hashText(s string) string {
