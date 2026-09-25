@@ -36,6 +36,7 @@ func TestOverridesAndModeMapping(t *testing.T) {
 		"min_votes":           "25",
 		"require_homepage":    "true",
 		"dry_run":             "true",
+		"sync_now":            "true",
 	}
 	s := Load(func(k string) (string, bool) { v, ok := m[k]; return v, ok })
 
@@ -56,8 +57,8 @@ func TestOverridesAndModeMapping(t *testing.T) {
 	if len(s.ExcludeCodecs) != 1 || s.ExcludeCodecs[0] != "mp3" {
 		t.Fatalf("codecs: %v", s.ExcludeCodecs)
 	}
-	if s.MinBitrate != 128 || s.MinVotes != 25 || !s.RequireHomepage || !s.DryRun {
-		t.Fatalf("min=%d votes=%d hp=%v dry=%v", s.MinBitrate, s.MinVotes, s.RequireHomepage, s.DryRun)
+	if s.MinBitrate != 128 || s.MinVotes != 25 || !s.RequireHomepage || !s.DryRun || !s.SyncNow {
+		t.Fatalf("min=%d votes=%d hp=%v dry=%v sync=%v", s.MinBitrate, s.MinVotes, s.RequireHomepage, s.DryRun, s.SyncNow)
 	}
 }
 

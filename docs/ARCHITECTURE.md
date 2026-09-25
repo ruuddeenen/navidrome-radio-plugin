@@ -19,7 +19,7 @@ Navidrome (WASM sandbox)
 |---------|-----|
 | `Config` | Read settings. |
 | `HTTP` | Fetch radio-browser pages. |
-| `Scheduler` | Recurring sync (cron) + one-time initial run. |
+| `Scheduler` | Recurring sync (cron). No run on load/restart. |
 | `Task` | Batched, retryable background work. |
 | `KVStore` | Sync cursor + station ID mapping. |
 | `SubsonicAPI` | `get/create/update/deleteInternetRadioStation`. |

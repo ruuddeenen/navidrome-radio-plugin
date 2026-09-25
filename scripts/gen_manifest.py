@@ -67,6 +67,21 @@ SYNC = [
             "default": False,
         },
     ),
+    (
+        "sync_now",
+        {
+            "type": "boolean",
+            "title": "Sync now (one-time)",
+            "description": (
+                "Runs a one-time sync after the plugin loads (i.e. after saving "
+                "settings). The plugin records that it ran, so it does not run "
+                "again on the next load; toggle off and on again to trigger "
+                "another run. Note: the switch cannot reset itself because plugin "
+                "settings are read-only from within the plugin."
+            ),
+            "default": False,
+        },
+    ),
 ]
 
 NAMING = [
@@ -193,7 +208,7 @@ def build() -> dict:
     ui_schema = {
         "type": "VerticalLayout",
         "elements": [
-            group("Synchronization", [control("sync_cron"), control("dry_run")]),
+            group("Synchronization", [control("sync_cron"), control("dry_run"), control("sync_now")]),
             group("Naming", [control("name_template", {"multi": True})]),
             group(
                 "Filters",

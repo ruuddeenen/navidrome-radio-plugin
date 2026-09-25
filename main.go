@@ -62,9 +62,24 @@ func (p *plugin) OnInit() error {
 		pdk.Log(pdk.LogError, "failed to schedule radio sync: "+err.Error())
 		return err
 	}
-	if _, err := host.SchedulerScheduleOneTime(20, payloadSync, scheduleID+"-initial"); err != nil {
-		pdk.Log(pdk.LogWarn, "failed to schedule initial radio sync: "+err.Error())
+
+	// Optional one-time sync triggered from the settings ("Sync now"). The plugin
+	// cannot write its own config, so the consumed state is tracked in the
+	// KVStore: it runs once per off->on transition, not on every load.
+	store := kvStore{}
+	if s.SyncNow {
+		if last, _ := store.Get("trigger:sync_now"); last != "1" {
+			if _, err := host.SchedulerScheduleOneTime(1, payloadSync, scheduleID+"-manual"); err != nil {
+				pdk.Log(pdk.LogWarn, "failed to schedule manual sync: "+err.Error())
+			} else {
+				pdk.Log(pdk.LogInfo, "one-time sync triggered from settings")
+			}
+			store.Set("trigger:sync_now", "1")
+		}
+	} else {
+		store.Set("trigger:sync_now", "0")
 	}
+
 	pdk.Log(pdk.LogInfo, "automatic-radio-sync ready; cron="+s.SyncCron)
 	return nil
 }
