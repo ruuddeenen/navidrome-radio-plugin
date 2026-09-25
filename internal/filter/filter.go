@@ -29,12 +29,6 @@ func Apply(s settings.Settings, st radiobrowser.Station) Decision {
 	if s.HideBroken && st.Int("lastcheckok") != 1 {
 		return reject("broken")
 	}
-	if s.SSLOnly && st.Int("ssl_error") != 0 {
-		return reject("ssl_error")
-	}
-	if s.ExcludeHLS && st.Int("hls") != 0 {
-		return reject("hls")
-	}
 
 	code := strings.ToUpper(strings.TrimSpace(st.Str("countrycode")))
 	if s.RequireCountryCode && code == "" {
@@ -45,14 +39,6 @@ func Apply(s settings.Settings, st radiobrowser.Station) Decision {
 	}
 	if contains(s.ExcludeCountryCodes, code) {
 		return reject("countrycode_excluded")
-	}
-
-	country := strings.ToLower(strings.TrimSpace(st.Str("country")))
-	if len(s.IncludeCountries) > 0 && !contains(s.IncludeCountries, country) {
-		return reject("country_not_included")
-	}
-	if contains(s.ExcludeCountries, country) {
-		return reject("country_excluded")
 	}
 
 	tags := lowerSet(st.Tags())
@@ -71,11 +57,6 @@ func Apply(s settings.Settings, st radiobrowser.Station) Decision {
 		return reject("languagecode_excluded")
 	}
 
-	languages := lowerSet(strings.Split(st.Str("language"), ","))
-	if len(s.IncludeLanguages) > 0 && !intersects(s.IncludeLanguages, languages) {
-		return reject("language_not_included")
-	}
-
 	codec := strings.ToLower(strings.TrimSpace(st.Str("codec")))
 	if len(s.IncludeCodecs) > 0 && !contains(s.IncludeCodecs, codec) {
 		return reject("codec_not_included")
@@ -84,12 +65,8 @@ func Apply(s settings.Settings, st radiobrowser.Station) Decision {
 		return reject("codec_excluded")
 	}
 
-	bitrate := st.Int("bitrate")
-	if s.MinBitrate > 0 && bitrate < s.MinBitrate {
+	if s.MinBitrate > 0 && st.Int("bitrate") < s.MinBitrate {
 		return reject("bitrate_below_min")
-	}
-	if s.MaxBitrate > 0 && bitrate > s.MaxBitrate {
-		return reject("bitrate_above_max")
 	}
 
 	if s.MinVotes > 0 && st.Int("votes") < s.MinVotes {

@@ -53,12 +53,19 @@ to load `https://<homepage>/favicon.ico` when you play a station, so setting a
 homepage is what makes a logo appear. The plugin therefore always fills
 `homePageUrl` (with an optional fallback to the stream URL).
 
-## Filters
+## Settings
 
-`hide_broken`, `require_countrycode`, `include_/exclude_` lists for country
-codes, countries, tags, languages, language codes and codecs, `min_bitrate`,
-`max_bitrate`, `exclude_hls`, `ssl_only`, `require_homepage`, `require_geo`,
-`min_votes`, `max_stations`.
+The settings UI is grouped into sections:
+
+- **Synchronisatie** – `sync_cron`, `dry_run`.
+- **Naamgeving** – `name_template`.
+- **Filters** – `hide_broken`; for each of country codes, tags, language codes
+  and codecs an include/exclude toggle plus a comma-separated list (empty = no
+  filter); `min_bitrate` and `min_votes`.
+- **Vereisten** – `require_countrycode`, `require_homepage`, `require_geo`.
+- **Gedrag** – `prune_missing`.
+
+Rendered station names are capped at 2048 characters.
 
 ## Build
 

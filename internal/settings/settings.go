@@ -9,6 +9,15 @@ import (
 	"strings"
 )
 
+// MaxNameLength is the fixed upper bound for a rendered station name. Navidrome
+// stores `name` as an unbounded varchar, so this is a safety bound only; the
+// longest station name observed is ~1.255 characters.
+const MaxNameLength = 2048
+
+// pageSize is the fixed radio-browser page size. Kept below the 10 MB outbound
+// HTTP response limit.
+const pageSize = 2000
+
 // Getter retrieves a raw configuration value by key.
 type Getter func(key string) (string, bool)
 
@@ -19,33 +28,27 @@ type Settings struct {
 	NameTemplate  string
 	MaxNameLength int
 
-	// radio-browser source.
-	BaseURL    string
-	PageSize   int
-	Order      string
-	Reverse    bool
-	HideBroken bool
+	// radio-browser source (not user configurable).
+	BaseURL  string
+	PageSize int
+	Order    string
+	Reverse  bool
 
 	// Filters.
+	HideBroken           bool
 	RequireCountryCode   bool
 	IncludeCountryCodes  []string
 	ExcludeCountryCodes  []string
-	IncludeCountries     []string
-	ExcludeCountries     []string
 	IncludeTags          []string
 	ExcludeTags          []string
-	IncludeLanguages     []string
 	IncludeLanguageCodes []string
 	ExcludeLanguageCodes []string
 	IncludeCodecs        []string
 	ExcludeCodecs        []string
 	MinBitrate           int
-	MaxBitrate           int
-	ExcludeHLS           bool
-	SSLOnly              bool
+	MinVotes             int
 	RequireHomepage      bool
 	RequireGeo           bool
-	MinVotes             int
 
 	// Limits.
 	MaxStations int
@@ -65,7 +68,8 @@ func Defaults() Settings {
 	return Settings{
 		SyncCron:         "30 1 * * *",
 		NameTemplate:     "[{countrycode?:OTHER}] [{tags}] {name}",
-		PageSize:         2000,
+		MaxNameLength:    MaxNameLength,
+		PageSize:         pageSize,
 		HideBroken:       true,
 		BatchSize:        200,
 		PruneMissing:     true,
@@ -79,48 +83,42 @@ func Load(get Getter) Settings {
 
 	s.SyncCron = value(get, "sync_cron", s.SyncCron)
 	s.NameTemplate = value(get, "name_template", s.NameTemplate)
-	s.MaxNameLength = integer(get, "max_name_length", 0)
 
-	s.BaseURL = strings.TrimSpace(value(get, "radiobrowser_base", ""))
-	if v := integer(get, "page_size", 0); v > 0 {
-		s.PageSize = v
-	}
-	s.Order = strings.TrimSpace(value(get, "order", ""))
-	s.Reverse = boolean(get, "reverse", false)
 	s.HideBroken = boolean(get, "hide_broken", s.HideBroken)
 
 	s.RequireCountryCode = boolean(get, "require_countrycode", false)
-	s.IncludeCountryCodes = upperList(value(get, "include_countrycodes", ""))
-	s.ExcludeCountryCodes = upperList(value(get, "exclude_countrycodes", ""))
-	s.IncludeCountries = lowerList(value(get, "include_countries", ""))
-	s.ExcludeCountries = lowerList(value(get, "exclude_countries", ""))
-	s.IncludeTags = lowerList(value(get, "include_tags", ""))
-	s.ExcludeTags = lowerList(value(get, "exclude_tags", ""))
-	s.IncludeLanguages = lowerList(value(get, "include_languages", ""))
-	s.IncludeLanguageCodes = lowerList(value(get, "include_languagecodes", ""))
-	s.ExcludeLanguageCodes = lowerList(value(get, "exclude_languagecodes", ""))
-	s.IncludeCodecs = lowerList(value(get, "include_codecs", ""))
-	s.ExcludeCodecs = lowerList(value(get, "exclude_codecs", ""))
-	s.MinBitrate = integer(get, "min_bitrate", 0)
-	s.MaxBitrate = integer(get, "max_bitrate", 0)
-	s.ExcludeHLS = boolean(get, "exclude_hls", false)
-	s.SSLOnly = boolean(get, "ssl_only", false)
 	s.RequireHomepage = boolean(get, "require_homepage", false)
 	s.RequireGeo = boolean(get, "require_geo", false)
+
+	applyMode(&s.IncludeCountryCodes, &s.ExcludeCountryCodes,
+		value(get, "countrycodes_mode", "exclude"), upperList(value(get, "countrycodes", "")))
+	applyMode(&s.IncludeTags, &s.ExcludeTags,
+		value(get, "tags_mode", "exclude"), lowerList(value(get, "tags", "")))
+	applyMode(&s.IncludeLanguageCodes, &s.ExcludeLanguageCodes,
+		value(get, "languagecodes_mode", "exclude"), lowerList(value(get, "languagecodes", "")))
+	applyMode(&s.IncludeCodecs, &s.ExcludeCodecs,
+		value(get, "codecs_mode", "exclude"), lowerList(value(get, "codecs", "")))
+
+	s.MinBitrate = integer(get, "min_bitrate", 0)
 	s.MinVotes = integer(get, "min_votes", 0)
 
-	s.MaxStations = integer(get, "max_stations", 0)
-	if v := integer(get, "batch_size", 0); v > 0 {
-		s.BatchSize = v
-	}
-	s.TaskDelayMs = integer(get, "task_delay_ms", 0)
-	s.BootstrapOpsPerRun = integer(get, "bootstrap_ops_per_run", 0)
 	s.PruneMissing = boolean(get, "prune_missing", s.PruneMissing)
 	s.DryRun = boolean(get, "dry_run", false)
-	s.AdminUser = strings.TrimSpace(value(get, "admin_user", ""))
-	s.HomepageFallback = boolean(get, "homepage_fallback", s.HomepageFallback)
 
 	return s
+}
+
+// applyMode routes the values to the include or exclude list based on the
+// include/exclude toggle (default: exclude).
+func applyMode(include, exclude *[]string, mode string, values []string) {
+	if len(values) == 0 {
+		return
+	}
+	if strings.EqualFold(strings.TrimSpace(mode), "include") {
+		*include = values
+	} else {
+		*exclude = values
+	}
 }
 
 // EffectiveURL returns the stream URL to use for a station (resolved first).
